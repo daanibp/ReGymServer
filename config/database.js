@@ -1,5 +1,8 @@
 import { Sequelize } from "sequelize";
-import config from "./config.json" assert { type: "json" };
+// Usamos `require` para cargar el archivo JSON
+import path from "path";
+
+const config = require(path.join(__dirname, "config.json"));
 
 const env = process.env.NODE_ENV || "development";
 const dbConfig = config[env];
