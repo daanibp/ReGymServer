@@ -5,10 +5,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const dbConfig = {
-    username: process.env.DB_USERNAME || "root",
-    password: process.env.DB_PASSWORD || "1234",
-    database: process.env.DB_DATABASE || "regym",
-    host: process.env.DB_HOST || "127.0.0.1",
+    username: process.env.MYSQL_USER || "root",
+    password: process.env.MYSQL_PASSWORD || "1234",
+    database: process.env.MYSQL_DATABASE || "regym",
+    host: process.env.MYSQL_HOST || "127.0.0.1",
     dialect: process.env.DB_DIALECT || "mysql",
 };
 
