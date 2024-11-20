@@ -12,7 +12,6 @@ const app = express();
 app.use(bodyParser.json());
 app.use(express.json());
 // Configuración de CORS
-const cors = require("cors");
 app.use(
     cors({
         origin: "https://regymclient.onrender.com", // Permitir tu dominio
