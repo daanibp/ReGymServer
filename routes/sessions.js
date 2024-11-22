@@ -171,19 +171,51 @@ router.get("/getDaysWithSession/:id", async (req, res) => {
         // Obtener todas las sesiones del usuario
         const sessions = await Session.findAll({
             where: { user_id: id },
-            attributes: ["session_date"],
+            attributes: ["id", "session_date"], // Queremos los ids y las fechas de las sesiones
         });
 
         if (!sessions || sessions.length === 0) {
             return res.status(404).json({ message: "Session not found" });
         }
 
-        // Crear un conjunto (set) de días únicos
+        // Extraer los ids de las sesiones
+        const sessionIds = sessions.map((session) => session.id);
+
+        // Obtener los ejercicios asociados a esas sesiones
+        const exercises = await Exercise.findAll({
+            where: {
+                session_id: {
+                    [Op.in]: sessionIds, // Filtrar por los session_id de las sesiones obtenidas
+                },
+            },
+            attributes: ["session_id"], // Solo necesitamos el session_id
+        });
+
+        if (!exercises || exercises.length === 0) {
+            return res.status(404).json({ message: "No exercises found" });
+        }
+
+        // Filtrar las sesiones que tienen ejercicios asociados
+        const sessionIdsWithExercises = exercises.map(
+            (exercise) => exercise.session_id
+        );
+
+        // Filtrar las sesiones originales que tienen ejercicios asociados
+        const filteredSessions = sessions.filter((session) =>
+            sessionIdsWithExercises.includes(session.id)
+        );
+
+        // Crear un array para los días únicos
         const uniqueDays = [];
 
-        // Iterar sobre las sesiones para agregar solo el día (sin la hora)
-        sessions.forEach((session) => {
-            uniqueDays.push(session.session_date);
+        // Iterar sobre las sesiones filtradas para agregar solo el día (sin la hora)
+        filteredSessions.forEach((session) => {
+            const date = session.session_date; // Convertir a formato YYYY-MM-DD
+
+            // Verificar si el día ya está en el array uniqueDays
+            if (!uniqueDays.includes(date)) {
+                uniqueDays.push(date); // Solo agregamos el día si no está ya presente
+            }
         });
 
         // Devolver los días con sesiones en formato 'YYYY-MM-DD'
@@ -193,7 +225,6 @@ router.get("/getDaysWithSession/:id", async (req, res) => {
         res.status(500).json({ error: "Error getting days with sessions" });
     }
 });
-
 // Ruta para obtener sesiones de una semana específica y el número de sets por categoría
 router.get("/week/getNumberOfSetsByCategory", async (req, res) => {
     try {
