@@ -257,9 +257,9 @@ router.get("/verify-email", async (req, res) => {
         user.state = "Active";
         await user.save();
 
-        res.status(200).json({ message: "E-mail verificado exitosamente." });
+        res.redirect(`https://tu-dominio.com/verify-email?status=success`);
     } catch (error) {
-        console.error("Error: ", error.message);
+        console.error("Error:", error.message);
         return res.status(400).json({ error: "Token inválido o expirado." });
     }
 });
