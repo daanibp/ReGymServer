@@ -149,15 +149,47 @@ router.get("/getNumberOfSessions/:id", async (req, res) => {
     const { id } = req.params;
 
     try {
+        // Obtener todas las sesiones del usuario
         const sessions = await Session.findAll({
             where: { user_id: id },
+            attributes: ["id"], // Solo necesitamos los ids de las sesiones
         });
 
-        if (!sessions) {
-            return res.status(404).json({ message: "Session not found" });
+        if (!sessions || sessions.length === 0) {
+            return res.status(404).json({ message: "No sessions found" });
         }
 
-        res.json({ numberOfSessions: sessions.length });
+        // Extraer los ids de las sesiones
+        const sessionIds = sessions.map((session) => session.id);
+
+        // Obtener los ejercicios asociados a esas sesiones
+        const exercises = await Exercise.findAll({
+            where: {
+                session_id: {
+                    [Op.in]: sessionIds, // Filtrar por los session_id de las sesiones obtenidas
+                },
+            },
+            attributes: ["session_id"], // Solo necesitamos el session_id
+        });
+
+        if (!exercises || exercises.length === 0) {
+            return res
+                .status(404)
+                .json({ message: "No exercises found for the sessions" });
+        }
+
+        // Filtrar los session_ids que tienen ejercicios asociados
+        const sessionIdsWithExercises = exercises.map(
+            (exercise) => exercise.session_id
+        );
+
+        // Filtrar las sesiones originales que tienen ejercicios asociados
+        const filteredSessions = sessions.filter((session) =>
+            sessionIdsWithExercises.includes(session.id)
+        );
+
+        // Devolver el número de sesiones con ejercicios asociados
+        res.json({ numberOfSessions: filteredSessions.length });
     } catch (error) {
         console.error("Error getting number of sessions:", error);
         res.status(500).json({ error: "Error getting number of sessions" });
