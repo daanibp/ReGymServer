@@ -237,7 +237,9 @@ router.get("/verify-email", async (req, res) => {
     const { token } = req.query;
 
     if (!token) {
-        return res.status(400).json({ error: "Falta el token." });
+        return res.redirect(
+            `https://regymclient.onrender.com/verify-email?status=error&message=Falta%20el%20token`
+        );
     }
 
     try {
@@ -245,24 +247,28 @@ router.get("/verify-email", async (req, res) => {
 
         const user = await User.findOne({ where: { email: decoded.email } });
         if (!user) {
-            return res.status(404).json({ error: "Usuario no encontrado." });
+            return res.redirect(
+                `https://regymclient.onrender.com/verify-email?status=error&message=Usuario%20no%20encontrado`
+            );
         }
 
         if (user.state === "Active") {
-            return res
-                .status(400)
-                .json({ message: "El E-mail ya está verificado." });
+            return res.redirect(
+                `https://regymclient.onrender.com/verify-email?status=error&message=El%20E-mail%20ya%20está%20verificado`
+            );
         }
 
         user.state = "Active";
         await user.save();
 
-        res.redirect(
-            `https://regymserver.onrender.com/verify-email?status=success`
+        return res.redirect(
+            `https://regymclient.onrender.com/verify-email?status=success&message=E-mail%20verificado%20exitosamente`
         );
     } catch (error) {
         console.error("Error:", error.message);
-        return res.status(400).json({ error: "Token inválido o expirado." });
+        return res.redirect(
+            `https://regymclient.onrender.com/verify-email?status=error&message=Token%20inválido%20o%20expirado`
+        );
     }
 });
 
