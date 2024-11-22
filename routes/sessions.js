@@ -18,13 +18,13 @@ router.get("/", async (req, res) => {
 });
 
 // POST a new session
-router.post("/pesas/:date", async (req, res) => {
-    const { date } = req.params;
+router.post("/pesas", async (req, res) => {
+    const { date, userId } = req.query;
     try {
         const today = format(new Date(), "yyyy-MM-dd");
 
         const openSession = await Session.findOne({
-            where: { session_date: date, type: "Pesas" },
+            where: { session_date: date, type: "Pesas", user_id: userId },
         });
         if (openSession) {
             res.status(201).json(openSession);
@@ -58,13 +58,13 @@ router.get("/pesas/getSessionByDate", async (req, res) => {
 });
 
 // POST a new cardio session
-router.post("/cardio/:date", async (req, res) => {
-    const { date } = req.params;
+router.post("/cardio", async (req, res) => {
+    const { date, userId } = req.query;
     try {
         const today = format(new Date(), "yyyy-MM-dd");
 
         const openSession = await Session.findOne({
-            where: { session_date: date, type: "Cardio" },
+            where: { session_date: date, type: "Cardio", user_id: userId },
         });
         if (openSession) {
             res.status(201).json(openSession);

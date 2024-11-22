@@ -281,7 +281,7 @@ router.post("/forgot-password", async (req, res) => {
             { expiresIn: "1h" }
         );
 
-        const resetPasswordUrl = `https://regymserver.onrender.com/reset-password?token=${verificationToken}`; // Cambiar a la URL del frontend
+        const resetPasswordUrl = `https://regymserver.onrender.com/reset-password?token=${verificationToken}`;
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
