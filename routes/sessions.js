@@ -168,7 +168,7 @@ router.get("/week", async (req, res) => {
         );
 
         // Enviar las fechas de los días con sesiones que tienen ejercicios
-        res.status(200).json({ daysWithExercises: sessionDates });
+        res.status(200).json(sessionDates);
     } catch (error) {
         console.error(
             "Error fetching sessions with exercises for the week:",
