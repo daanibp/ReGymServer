@@ -14,7 +14,7 @@ app.use(express.json());
 // Configuración de CORS
 app.use(
     cors({
-        origin: "https://regymclient.onrender.com", // Permitir tu dominio
+        origin: process.env.CLIENT_URL || "http://localhost:3000", // Permitir tu dominio
         methods: ["GET", "POST", "PUT", "DELETE"], // Métodos permitidos
         credentials: true, // Permitir cookies si es necesario
     })
@@ -31,7 +31,7 @@ app.use("/intervals", intervalRoutes); // All set-related routes under /sets
 
 // Synchronize Sequelize models with the database
 sequelize
-    .sync()
+    .sync({ alter: true })
     .then(() => {
         console.log("Database connected and models synchronized.");
         app.listen(port, () => {
