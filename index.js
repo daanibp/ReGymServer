@@ -29,6 +29,17 @@ app.use("/exercises", exerciseRoutes); // All exercise-related routes under /exe
 app.use("/sets", setRoutes); // All set-related routes under /sets
 app.use("/intervals", intervalRoutes); // All set-related routes under /sets
 
+app.get("/healthcheck", (req, res) => {
+    res.status(200).json({
+        status: "OK",
+        uptime: process.uptime(), // Tiempo que lleva el servidor activo
+        database: sequelize?.connectionManager?.connected
+            ? "Connected"
+            : "Disconnected", // Estado de la base de datos
+        timestamp: new Date().toISOString(),
+    });
+});
+
 // Synchronize Sequelize models with the database
 sequelize
     .sync({ alter: true })
