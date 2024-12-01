@@ -19,11 +19,35 @@ router.get("/", async (req, res) => {
 
 // POST a new exercise
 router.post("/", async (req, res) => {
+    const { exercise_name, ...otherFields } = req.body; // Extrae exercise_name y el resto de los campos
+
+    // Validar si 'exercise_name' existe en el cuerpo de la solicitud
+    if (!exercise_name) {
+        return res.status(400).json({ error: "Exercise name is required" });
+    }
+
     try {
-        const newExercise = await Exercise.create(req.body);
+        // Busca si ya existe un ejercicio con el mismo nombre
+        const existingExercise = await Exercise.findOne({
+            where: { exercise_name: exercise_name },
+        });
+
+        // Determina el valor de 'fav'
+        const fav = existingExercise ? existingExercise.fav : false; // Asignar 'false' en lugar de '0'
+
+        // Crea el nuevo ejercicio
+        const newExercise = await Exercise.create({
+            exercise_name,
+            ...otherFields, // Incluye el resto de los campos del cuerpo de la solicitud
+            fav, // Asignar 'fav' como un valor booleano
+        });
+
         res.status(201).json(newExercise);
     } catch (error) {
-        res.status(500).json({ error: "Failed to create exercise" });
+        console.error("Error creating exercise:", error); // Detalles del error
+        res.status(500).json({
+            error: error.message || "Failed to create exercise",
+        });
     }
 });
 
@@ -356,7 +380,6 @@ router.get("/pesas/getExercisesFav/:userId", async (req, res) => {
     }
 });
 
-// Ruta para obtener los ejercicios favoritos de "Cardio"
 router.get("/cardio/getExercisesFav/:userId", async (req, res) => {
     const { userId } = req.params;
 
@@ -409,27 +432,28 @@ router.get("/cardio/getExercisesFav/:userId", async (req, res) => {
                     attributes: ["distance", "duration", "interval_number"],
                 });
 
-                // Calcular la distancia máxima
+                // Calcular estadísticas
                 const maxDistance = intervals.reduce(
-                    (max, interval) => Math.max(max, interval.distance),
+                    (max, interval) => Math.max(max, interval.distance || 0),
                     0
                 );
 
-                // Calcular la duración máxima
                 const maxDuration = intervals.reduce(
-                    (max, interval) => Math.max(max, interval.duration),
+                    (max, interval) => Math.max(max, interval.duration || 0),
                     0
                 );
 
-                // Calcular la velocidad media máxima
                 const maxAvgSpeed = intervals.reduce(
                     (maxInterval, interval) => {
-                        const volume = interval.distance / interval.duration;
-                        if (volume > maxInterval.volume) {
+                        const speed =
+                            interval.duration > 0
+                                ? interval.distance / (interval.duration / 60)
+                                : 0;
+                        if (speed > maxInterval.volume) {
                             return {
                                 distance: interval.distance,
                                 duration: interval.duration,
-                                volume,
+                                volume: speed,
                             };
                         }
                         return maxInterval;
@@ -437,7 +461,6 @@ router.get("/cardio/getExercisesFav/:userId", async (req, res) => {
                     { distance: 0, duration: 0, volume: 0 }
                 );
 
-                // Calcular las mejores series por intervalo_number
                 const bestIntervals = [];
                 for (const interval of intervals) {
                     if (
@@ -445,23 +468,33 @@ router.get("/cardio/getExercisesFav/:userId", async (req, res) => {
                         interval.duration === null
                     )
                         continue;
-                    const volume = interval.distance / (interval.duration / 60);
+
+                    const speed =
+                        interval.duration > 0
+                            ? parseFloat(
+                                  (
+                                      interval.distance /
+                                      (interval.duration / 60)
+                                  ).toFixed(2)
+                              )
+                            : 0;
+
                     const existingInterval = bestIntervals.find(
                         (s) => s.interval_number === interval.interval_number
                     );
 
                     if (
                         !existingInterval ||
-                        volume > existingInterval.best_volume
+                        speed > existingInterval.best_volume
                     ) {
                         if (existingInterval) {
-                            existingInterval.best_volume = volume;
+                            existingInterval.best_volume = speed;
                             existingInterval.distance = interval.distance;
                             existingInterval.duration = interval.duration;
                         } else {
                             bestIntervals.push({
                                 interval_number: interval.interval_number,
-                                best_volume: volume,
+                                best_volume: speed,
                                 distance: interval.distance,
                                 duration: interval.duration,
                             });
@@ -469,19 +502,14 @@ router.get("/cardio/getExercisesFav/:userId", async (req, res) => {
                     }
                 }
 
-                // Estructura la respuesta con las estadísticas
+                // Estructura de respuesta para el ejercicio
                 return {
                     exercise_name: exerciseName,
                     max_duration: maxDuration,
                     max_distance: maxDistance,
-                    max_volume: isNaN(
-                        maxAvgSpeed.distance / (maxAvgSpeed.duration / 60)
-                    )
-                        ? "0 km / h"
-                        : `${(
-                              maxAvgSpeed.distance /
-                              (maxAvgSpeed.duration / 60)
-                          ).toFixed(2)} km / h`,
+                    max_volume: maxAvgSpeed.volume
+                        ? `${maxAvgSpeed.volume.toFixed(2)} km/h`
+                        : "0 km/h",
                     best_intervals: bestIntervals.sort(
                         (a, b) => a.interval_number - b.interval_number
                     ),
@@ -492,7 +520,7 @@ router.get("/cardio/getExercisesFav/:userId", async (req, res) => {
         // Paso 5: Calcular el número máximo de intervalos
         const maxIntervals = exercisesWithStats.reduce((max, exercise) => {
             const numIntervals = exercise.best_intervals.length;
-            return numIntervals > max ? numIntervals : max;
+            return Math.max(max, numIntervals);
         }, 0);
 
         // Enviar la respuesta con los ejercicios favoritos y sus estadísticas
