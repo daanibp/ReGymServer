@@ -14,6 +14,7 @@ const dbConfig = isProduction
           password: process.env.MYSQL_PASSWORD,
           database: process.env.MYSQL_DATABASE,
           host: process.env.MYSQL_HOST,
+          port: process.env.MYSQL_PORT || "3306",
           dialect: process.env.DB_DIALECT || "mysql",
           dialectOptions: {
               ssl: {
@@ -27,6 +28,7 @@ const dbConfig = isProduction
           password: process.env.LOCAL_MYSQL_PASSWORD || "1234",
           database: process.env.LOCAL_MYSQL_DATABASE || "regym",
           host: process.env.LOCAL_MYSQL_HOST || "127.0.0.1",
+          port: process.env.MYSQL_PORT || "3306",
           dialect: process.env.LOCAL_DB_DIALECT || "mysql",
       };
 
@@ -37,6 +39,7 @@ const sequelize = new Sequelize(
     dbConfig.password,
     {
         host: dbConfig.host,
+        port: dbConfig.port,
         dialect: dbConfig.dialect,
         dialectOptions: dbConfig.dialectOptions,
     }
